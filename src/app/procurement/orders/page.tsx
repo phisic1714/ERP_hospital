@@ -1198,7 +1198,7 @@ export default function PurchaseOrdersPage() {
                     </div>
                   </div>
                   <Link
-                    href={`/receiving?poNumber=${selectedPODetail.poNumber}`}
+                    href={`/inventory/receiving?poNumber=${selectedPODetail.poNumber}`}
                     className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors whitespace-nowrap"
                   >
                     <span>เปิดตรวจรับสินค้า (GR)</span>
@@ -1212,7 +1212,7 @@ export default function PurchaseOrdersPage() {
                     <span>สามารถนำเลขที่ใบสั่งซื้อไปตรวจรับสินค้าได้เมื่อของมาส่ง</span>
                   </div>
                   <Link
-                    href={`/receiving?poNumber=${selectedPODetail.poNumber}`}
+                    href={`/inventory/receiving?poNumber=${selectedPODetail.poNumber}`}
                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
                   >
                     ไปหน้าตรวจรับ (GR)

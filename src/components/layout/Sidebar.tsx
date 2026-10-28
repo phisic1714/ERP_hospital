@@ -41,7 +41,7 @@ export function Sidebar() {
 
   // Fetch real-time pending approvals count (called unconditionally on every render)
   useEffect(() => {
-    if (pathname === '/') return;
+    if (pathname === '/home') return;
     fetch('/api/approvals')
       .then((res) => res.json())
       .then((data) => {
@@ -56,7 +56,7 @@ export function Sidebar() {
   }, [pathname]);
 
   // If on ERP Center Portal (home), don't render sidebar to allow clean full-width layout
-  if (pathname === '/') {
+  if (pathname === '/home') {
     return null;
   }
 
@@ -108,7 +108,7 @@ export function Sidebar() {
 
         {/* Back to ERP Center Portal */}
         <Link
-          href="/"
+          href="/home"
           title="กลับหน้าศูนย์รวม ERP Center"
           className="w-8 h-8 rounded-xl bg-slate-50 text-[#94A3B8] hover:text-[#14213D] flex items-center justify-center shadow-2xs border border-[#E2EAF4] hover:bg-slate-100 transition-all"
         >
@@ -177,7 +177,7 @@ export function Sidebar() {
             <>
               {/* Item Master */}
               {renderMenuItem({
-                href: '/items',
+                href: '/inventory/items',
                 name: 'ทะเบียนสินค้า (Master)',
                 icon: Package,
                 pathname,
@@ -189,7 +189,7 @@ export function Sidebar() {
 
               {/* Stock Overview */}
               {renderMenuItem({
-                href: '/stock',
+                href: '/inventory/stock',
                 name: 'สต็อกคงคลัง (Stock)',
                 icon: Layers,
                 pathname,
@@ -225,25 +225,25 @@ export function Sidebar() {
                 {isWorkflowsExpanded && (
                   <div className="pl-4 my-1 space-y-1">
                     {renderSubItem({
-                      href: '/receiving',
+                      href: '/inventory/receiving',
                       name: 'รับสินค้าเข้าคลัง (GR)',
                       iconDotColor: 'bg-blue-500',
                       pathname,
                     })}
                     {renderSubItem({
-                      href: '/issue',
+                      href: '/inventory/issue',
                       name: 'เบิกจ่ายสินค้า (Issue)',
                       iconDotColor: 'bg-emerald-500',
                       pathname,
                     })}
                     {renderSubItem({
-                      href: '/transfer',
+                      href: '/inventory/transfer',
                       name: 'โอนย้ายพัสดุ (Transfer)',
                       iconDotColor: 'bg-amber-500',
                       pathname,
                     })}
                     {renderSubItem({
-                      href: '/return',
+                      href: '/inventory/return',
                       name: 'รับคืนพัสดุ (Return)',
                       iconDotColor: 'bg-rose-500',
                       pathname,
@@ -254,7 +254,7 @@ export function Sidebar() {
 
               {/* Quality & Stock Control */}
               {renderMenuItem({
-                href: '/lots',
+                href: '/inventory/lots',
                 name: 'Lot & วันหมดอายุ (FEFO)',
                 icon: CalendarClock,
                 pathname,
@@ -265,7 +265,7 @@ export function Sidebar() {
               })}
 
               {renderMenuItem({
-                href: '/adjustment',
+                href: '/inventory/adjustment',
                 name: 'ปรับปรุงสต็อก (Adjust)',
                 icon: SlidersHorizontal,
                 pathname,
@@ -276,7 +276,7 @@ export function Sidebar() {
               })}
 
               {renderMenuItem({
-                href: '/count',
+                href: '/inventory/count',
                 name: 'ตรวจนับพัสดุ (Count)',
                 icon: ClipboardCheck,
                 pathname,
@@ -287,7 +287,7 @@ export function Sidebar() {
               })}
 
               {renderMenuItem({
-                href: '/stock-card',
+                href: '/inventory/stock-card',
                 name: 'บัตรสต็อก (Stock Card)',
                 icon: History,
                 pathname,
@@ -298,7 +298,7 @@ export function Sidebar() {
               })}
 
               {renderMenuItem({
-                href: '/warehouses',
+                href: '/inventory/warehouses',
                 name: 'ผังคลังและโซนจัดเก็บ',
                 icon: Building,
                 pathname,
@@ -390,7 +390,7 @@ export function Sidebar() {
               </div>
 
               {renderMenuItem({
-                href: '/receiving',
+                href: '/inventory/receiving',
                 name: 'ตรวจรับเข้าคลัง (GR)',
                 icon: ArrowDownToLine,
                 pathname,
@@ -401,7 +401,7 @@ export function Sidebar() {
               })}
 
               {renderMenuItem({
-                href: '/items',
+                href: '/inventory/items',
                 name: 'ทะเบียนสินค้า (Master)',
                 icon: Package,
                 pathname,
@@ -422,12 +422,12 @@ export function Sidebar() {
 
           {/* Approvals with Red Circular Badge (like Notification 4 in screenshot) */}
           {(() => {
-            const isActive = pathname === '/approvals';
+            const isActive = pathname === '/operations/approvals';
 
             if (isActive) {
               return (
                 <Link
-                  href="/approvals"
+                  href="/operations/approvals"
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all duration-200 ${activeBg}`}
                 >
                   <div className="flex items-center gap-3">
@@ -449,7 +449,7 @@ export function Sidebar() {
 
             return (
               <Link
-                href="/approvals"
+                href="/operations/approvals"
                 className={`flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-medium transition-all group ${hoverBg}`}
               >
                 <div className="flex items-center gap-3">
@@ -471,7 +471,7 @@ export function Sidebar() {
 
           {/* Reports */}
           {renderMenuItem({
-            href: '/reports',
+            href: '/operations/reports',
             name: 'รายงานสรุป & มูลค่า',
             icon: BarChart3,
             pathname,
@@ -483,7 +483,7 @@ export function Sidebar() {
 
           {/* Audit Trail */}
           {renderMenuItem({
-            href: '/audit',
+            href: '/operations/audit',
             name: 'ประวัติธุรกรรม (Audit)',
             icon: ScrollText,
             pathname,
@@ -518,7 +518,7 @@ function renderMenuItem({
   iconActiveBg: string;
   hoverBg: string;
 }) {
-  const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+  const isActive = pathname === href || (href !== '/home' && pathname.startsWith(href));
 
   if (isActive) {
     return (

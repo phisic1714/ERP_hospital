@@ -132,7 +132,7 @@ export default function InventoryDashboardPage() {
       sub: 'บันทึกในระบบและเปิดใช้งาน',
       icon: Package,
       color: 'text-[#2563EB] bg-[#EFF6FF] border-blue-200',
-      href: '/items',
+      href: '/inventory/items',
     },
     {
       title: 'ยอดสต็อกคงเหลือรวม',
@@ -142,7 +142,7 @@ export default function InventoryDashboardPage() {
       sub: currentWarehouseObj ? `เฉพาะคลัง ${currentWarehouseObj.name}` : 'จำนวนหน่วยรวมทุกคลังสินค้า',
       icon: Layers,
       color: 'text-teal-600 bg-teal-50 border-teal-200',
-      href: '/stock',
+      href: '/inventory/stock',
     },
     {
       title: 'มูลค่าสต็อกรวม',
@@ -152,7 +152,7 @@ export default function InventoryDashboardPage() {
       sub: 'คำนวณจากราคาทุนมาตรฐานเฉลี่ย',
       icon: CircleDollarSign,
       color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-      href: '/reports',
+      href: '/operations/reports',
     },
     {
       title: 'สินค้าใกล้หมด (Low Stock)',
@@ -163,7 +163,7 @@ export default function InventoryDashboardPage() {
       icon: AlertTriangle,
       color: summary.lowStockItems > 0 ? 'text-amber-600 bg-amber-50 border-amber-300' : 'text-[#64748B] bg-slate-50 border-[#E2EAF4]',
       highlight: summary.lowStockItems > 0,
-      href: '/stock?status=LOW_STOCK',
+      href: '/inventory/stock?status=LOW_STOCK',
     },
     {
       title: 'สินค้าหมดคลัง (Out of Stock)',
@@ -174,7 +174,7 @@ export default function InventoryDashboardPage() {
       icon: AlertOctagon,
       color: summary.outOfStock > 0 ? 'text-rose-600 bg-rose-50 border-rose-300' : 'text-[#64748B] bg-slate-50 border-[#E2EAF4]',
       highlight: summary.outOfStock > 0,
-      href: '/stock?status=OUT_OF_STOCK',
+      href: '/inventory/stock?status=OUT_OF_STOCK',
     },
     {
       title: 'สินค้าใกล้หมดอายุ (< 90 วัน)',
@@ -185,7 +185,7 @@ export default function InventoryDashboardPage() {
       icon: CalendarClock,
       color: summary.nearExpiry > 0 ? 'text-orange-600 bg-orange-50 border-orange-300' : 'text-[#64748B] bg-slate-50 border-[#E2EAF4]',
       highlight: summary.nearExpiry > 0,
-      href: '/lots?filter=NEAR_EXPIRY',
+      href: '/inventory/lots?filter=NEAR_EXPIRY',
     },
     {
       title: 'สินค้าหมดอายุ (Expired)',
@@ -196,7 +196,7 @@ export default function InventoryDashboardPage() {
       icon: Clock,
       color: summary.expiredItems > 0 ? 'text-red-700 bg-red-100 border-red-300' : 'text-[#64748B] bg-slate-50 border-[#E2EAF4]',
       highlight: summary.expiredItems > 0,
-      href: '/lots?filter=EXPIRED',
+      href: '/inventory/lots?filter=EXPIRED',
     },
     {
       title: 'ธุรกรรมรอจัดการ (Pending)',
@@ -207,19 +207,19 @@ export default function InventoryDashboardPage() {
       icon: FileCheck2,
       color: summary.pendingTransactions > 0 ? 'text-indigo-600 bg-indigo-50 border-indigo-300' : 'text-[#64748B] bg-slate-50 border-[#E2EAF4]',
       highlight: summary.pendingTransactions > 0,
-      href: '/approvals',
+      href: '/operations/approvals',
     },
   ];
 
   const quickActions = [
-    { title: 'รับเข้าคลัง (GR)', desc: 'ตรวจรับสินค้าจาก PO', href: '/receiving', icon: ArrowDownToLine, color: 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
-    { title: 'เบิกจ่ายสินค้า (Issue)', desc: 'จ่ายยา/เวชภัณฑ์ตาม FEFO', href: '/issue', icon: ArrowUpFromLine, color: 'text-[#2563EB] bg-[#EFF6FF] hover:bg-blue-100 border-blue-200' },
-    { title: 'โอนย้ายข้ามคลัง (TRF)', desc: 'ย้ายสินค้าระหว่างคลังย่อย', href: '/transfer', icon: ArrowLeftRight, color: 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200' },
-    { title: 'รับคืนพัสดุ (RET)', desc: 'รับคืนจากแผนก/หอผู้ป่วย', href: '/return', icon: RotateCcw, color: 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200' },
-    { title: 'ปรับปรุงสต็อก (ADJ)', desc: 'นับเจอเกิน/ขาด/ชำรุด', href: '/adjustment', icon: SlidersHorizontal, color: 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200' },
-    { title: 'ตรวจนับพัสดุ (Count)', desc: 'เปิดรอบนับ Cycle Count', href: '/count', icon: ClipboardCheck, color: 'text-teal-700 bg-teal-50 hover:bg-teal-100 border-teal-200' },
-    { title: 'บัตรสต็อก (Stock Card)', desc: 'ตรวจสอบประวัติแยกสินค้า', href: '/stock-card', icon: History, color: 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200' },
-    { title: 'ผังคลังและตำแหน่ง', desc: 'คลังหลัก/ห้องผ่าตัด/ER', href: '/warehouses', icon: Building, color: 'text-[#64748B] bg-[#F5F8FC] hover:bg-slate-100 border-[#E2EAF4]' },
+    { title: 'รับเข้าคลัง (GR)', desc: 'ตรวจรับสินค้าจาก PO', href: '/inventory/receiving', icon: ArrowDownToLine, color: 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
+    { title: 'เบิกจ่ายสินค้า (Issue)', desc: 'จ่ายยา/เวชภัณฑ์ตาม FEFO', href: '/inventory/issue', icon: ArrowUpFromLine, color: 'text-[#2563EB] bg-[#EFF6FF] hover:bg-blue-100 border-blue-200' },
+    { title: 'โอนย้ายข้ามคลัง (TRF)', desc: 'ย้ายสินค้าระหว่างคลังย่อย', href: '/inventory/transfer', icon: ArrowLeftRight, color: 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200' },
+    { title: 'รับคืนพัสดุ (RET)', desc: 'รับคืนจากแผนก/หอผู้ป่วย', href: '/inventory/return', icon: RotateCcw, color: 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200' },
+    { title: 'ปรับปรุงสต็อก (ADJ)', desc: 'นับเจอเกิน/ขาด/ชำรุด', href: '/inventory/adjustment', icon: SlidersHorizontal, color: 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200' },
+    { title: 'ตรวจนับพัสดุ (Count)', desc: 'เปิดรอบนับ Cycle Count', href: '/inventory/count', icon: ClipboardCheck, color: 'text-teal-700 bg-teal-50 hover:bg-teal-100 border-teal-200' },
+    { title: 'บัตรสต็อก (Stock Card)', desc: 'ตรวจสอบประวัติแยกสินค้า', href: '/inventory/stock-card', icon: History, color: 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200' },
+    { title: 'ผังคลังและตำแหน่ง', desc: 'คลังหลัก/ห้องผ่าตัด/ER', href: '/inventory/warehouses', icon: Building, color: 'text-[#64748B] bg-[#F5F8FC] hover:bg-slate-100 border-[#E2EAF4]' },
   ];
 
   return (
@@ -343,7 +343,7 @@ export default function InventoryDashboardPage() {
           </div>
 
           <Link
-            href="/approvals"
+            href="/operations/approvals"
             className="flex items-center gap-1.5 px-4 py-2 bg-[#6366F1] hover:bg-[#4338CA] text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0"
           >
             <span>เปิดศูนย์อนุมัติเอกสาร</span>
@@ -533,7 +533,7 @@ export default function InventoryDashboardPage() {
                   <p className="text-xs text-[#64748B]">ลำดับการจ่ายตามวันหมดอายุเพื่อป้องกันของเสีย</p>
                 </div>
               </div>
-              <Link href="/lots" className="text-xs text-[#2563EB] font-bold hover:underline flex items-center gap-1">
+              <Link href="/inventory/lots" className="text-xs text-[#2563EB] font-bold hover:underline flex items-center gap-1">
                 <span>ดู Lot ทั้งหมด</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -649,7 +649,7 @@ export default function InventoryDashboardPage() {
                   <p className="text-xs text-[#64748B]">ยอดพร้อมจ่ายต่ำกว่าระดับความปลอดภัย (Min Stock)</p>
                 </div>
               </div>
-              <Link href="/stock?status=LOW_STOCK" className="text-xs text-[#2563EB] font-bold hover:underline flex items-center gap-1">
+              <Link href="/inventory/stock?status=LOW_STOCK" className="text-xs text-[#2563EB] font-bold hover:underline flex items-center gap-1">
                 <span>ดูสต็อกทั้งหมด</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -736,7 +736,7 @@ export default function InventoryDashboardPage() {
             </div>
           </div>
           <Link
-            href="/stock-card"
+            href="/inventory/stock-card"
             className="flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:text-[#164EAB] hover:underline shrink-0"
           >
             <span>เปิดบัตรสต็อกทั้งหมด (Stock Card)</span>
@@ -1020,7 +1020,7 @@ export default function InventoryDashboardPage() {
               </span>
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/stock-card?search=${selectedMovement.documentNumber}`}
+                  href={`/inventory/stock-card?search=${selectedMovement.documentNumber}`}
                   className="px-4 py-2 bg-[#2563EB] hover:bg-[#164EAB] text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                 >
                   เปิดตรวจสอบในหน้าบัตรสต็อก (Stock Card)
@@ -1201,14 +1201,14 @@ export default function InventoryDashboardPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   {selectedLot.daysExpired > 0 ? (
                     <Link
-                      href="/adjustment"
+                      href="/inventory/adjustment"
                       className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                     >
                       เปิดใบปรับยอดตัดทำลาย
                     </Link>
                   ) : (
                     <Link
-                      href="/issue"
+                      href="/inventory/issue"
                       className="px-3.5 py-2 bg-[#2563EB] hover:bg-[#164EAB] text-white rounded-xl text-xs font-bold transition-all shadow-xs"
                     >
                       เบิกจ่ายพัสดุด่วน (FEFO)
@@ -1361,7 +1361,7 @@ export default function InventoryDashboardPage() {
 
                 <div className="flex items-center gap-2 shrink-0">
                   <Link
-                    href={`/transfer`}
+                    href={`/inventory/transfer`}
                     className="px-3.5 py-2 bg-white hover:bg-[#F5F8FC] text-[#14213D] rounded-xl text-xs font-bold transition-all shadow-xs border border-[#E2EAF4]"
                   >
                     โอนย้ายพัสดุ

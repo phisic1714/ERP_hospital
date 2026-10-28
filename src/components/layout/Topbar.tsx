@@ -24,7 +24,7 @@ export function Topbar() {
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const isHome = pathname === '/';
+  const isHome = pathname === '/home';
   const isProcurement = pathname.startsWith('/procurement');
   const isInventory = !isHome && !isProcurement;
 
@@ -115,7 +115,7 @@ export function Topbar() {
                 <div className="p-1 space-y-1">
                   {/* 1. ERP Center */}
                   <Link
-                    href="/"
+                    href="/home"
                     onClick={() => setShowAppSwitcher(false)}
                     className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition-colors ${
                       isHome ? 'bg-blue-50 font-bold text-[#2563EB]' : 'hover:bg-[#F5F8FC] text-[#64748B]'
@@ -219,7 +219,7 @@ export function Topbar() {
 
         {/* Notifications / Pending Approval link */}
         <Link
-          href="/approvals"
+          href="/operations/approvals"
           className="relative p-2 rounded-xl text-[#64748B] hover:text-[#14213D] hover:bg-[#F5F8FC] border border-transparent hover:border-[#E2EAF4] transition-all"
           title="รายการรออนุมัติ"
         >

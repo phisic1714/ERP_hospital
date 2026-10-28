@@ -1,4 +1,5 @@
 node_modules
+.local-backups/
 .next
 out
 .env*.local
