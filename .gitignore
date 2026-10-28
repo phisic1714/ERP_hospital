@@ -1,5 +1,6 @@
 node_modules
 .local-backups/
+prisma/mock.db*
 .next
 out
 .env*.local

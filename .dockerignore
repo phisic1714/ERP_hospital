@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.next-*
+**/out
+**/*.tsbuildinfo
+.git
+.local-backups
+prisma/*.db*
+**/.env*
+!**/.env.example
+**/coverage
+**/*.log

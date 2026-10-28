@@ -1,12 +1,27 @@
 {
-  "name": "hospital-inventory-system",
+  "name": "erp-hospital",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev:shell": "npm run dev --workspace=@erp/shell",
+    "dev:procurement": "npm run dev --workspace=@erp/procurement",
+    "build:shell": "npm run build --workspace=@erp/shell",
+    "build:procurement": "npm run build --workspace=@erp/procurement",
+    "build": "npm run build:shell && npm run build:inventory && npm run build:procurement && npm run build:operations",
+    "dev:inventory": "npm run dev --workspace=@erp/inventory",
+    "build:inventory": "npm run build --workspace=@erp/inventory",
+    "dev:operations": "npm run dev --workspace=@erp/operations",
+    "build:operations": "npm run build --workspace=@erp/operations",
+    "dev": "npm run dev:shell",
+    "typecheck": "tsc --noEmit -p apps/shell && tsc --noEmit -p apps/inventory && tsc --noEmit -p apps/procurement && tsc --noEmit -p apps/operations && tsc --noEmit -p apps/mock-api",
+    "dev:mock-api": "npm run dev --workspace=@erp/mock-api",
+    "build:mock-api": "npm run build --workspace=@erp/mock-api",
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "mock:init": "node scripts/init-mock-db.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -16,7 +31,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
-    "tailwind-merge": "^2.5.2"
+    "tailwind-merge": "^2.5.2",
+    "@erp/ui": "1.0.0",
+    "@erp/app-context": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.16.10",
@@ -25,6 +42,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "@erp/next-config": "1.0.0"
   }
 }

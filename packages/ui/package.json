@@ -1,0 +1,22 @@
+{
+  "name": "@erp/ui",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./layout/*": "./src/layout/*.tsx",
+    "./ui/*": "./src/ui/*.tsx",
+    "./procurement/*": "./src/procurement/*.tsx",
+    "./globals.css": "./src/styles/globals.css",
+    "./navigation": "./src/navigation.tsx"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "next": "^14.2.15",
+    "lucide-react": "^0.446.0"
+  },
+  "dependencies": {
+    "@erp/app-context": "1.0.0"
+  }
+}
