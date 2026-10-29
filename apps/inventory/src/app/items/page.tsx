@@ -105,6 +105,95 @@ export default function ItemMasterPage() {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedItems = items.slice(startIndex, startIndex + pageSize);
 
+  let tableContent;
+  if (loading) {
+    tableContent = (
+      <tr>
+        <td colSpan={9} className="py-12 text-center text-[#94A3B8]">
+          <RefreshCw className="w-6 h-6 mx-auto animate-spin text-[#2563EB] mb-2" />
+          กำลังดึงข้อมูลสินค้า...
+        </td>
+      </tr>
+    );
+  } else if (paginatedItems.length === 0) {
+    tableContent = (
+      <tr>
+        <td colSpan={9} className="py-12 text-center text-[#94A3B8]">
+          ไม่พบข้อมูลสินค้าตามเงื่อนไข
+        </td>
+      </tr>
+    );
+  } else {
+    tableContent = paginatedItems.map((it) => (
+      <tr key={it.id} className="hover:bg-[#F5F8FC] transition-colors">
+        <td className="py-3 px-4 whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => handleOpenDetail(it.id)}
+            className="font-mono font-bold text-[#2563EB] hover:text-[#164EAB] hover:underline"
+            title="คลิกเพื่อดูข้อมูลสินค้า"
+          >
+            {it.itemCode}
+          </button>
+        </td>
+        <td className="py-3 px-3">
+          <div className="font-semibold text-[#14213D]">{it.itemName}</div>
+          {it.genericName && (
+            <div className="text-[11px] text-[#64748B] italic break-words">
+              {it.genericName}
+            </div>
+          )}
+        </td>
+        <td className="py-3 px-3 whitespace-nowrap text-[#64748B]">
+          {it.category?.name}
+        </td>
+        <td className="py-3 px-3 text-right font-medium text-[#14213D] tabular-nums whitespace-nowrap">
+          ฿
+          {it.standardCost.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+          })}{" "}
+          / {it.unit}
+        </td>
+        <td className="py-3 px-3 text-right text-[#64748B] tabular-nums whitespace-nowrap">
+          {it.minStock?.toLocaleString()} - {it.maxStock?.toLocaleString()}{" "}
+          {it.unit}
+        </td>
+        <td className="py-3 px-3 text-right font-bold text-amber-600 tabular-nums whitespace-nowrap">
+          {it.reorderPoint?.toLocaleString()} {it.unit}
+        </td>
+        <td className="py-3 px-3 text-center whitespace-nowrap">
+          <div className="flex items-center justify-center gap-1">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              Lot
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+              Exp
+            </span>
+          </div>
+        </td>
+        <td className="py-3 px-3 text-center whitespace-nowrap text-[#64748B] text-[11px]">
+          {it.purchaseUnit && it.conversionRate > 1 ? (
+            <span className="px-2 py-0.5 bg-slate-100 rounded text-[#334155] font-medium border border-[#E2EAF4]">
+              1 {it.purchaseUnit} = {it.conversionRate} {it.unit}
+            </span>
+          ) : (
+            "-"
+          )}
+        </td>
+        <td className="py-3 px-4 text-center whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => handleOpenDetail(it.id)}
+            className="px-3 py-1 bg-blue-50/80 hover:bg-blue-100 text-[#2563EB] rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 border border-blue-200 shadow-2xs"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>ดูข้อมูล</span>
+          </button>
+        </td>
+      </tr>
+    ));
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* 1. Page Header */}
@@ -189,96 +278,7 @@ export default function ItemMasterPage() {
                 <th className="py-3 px-4 text-center">การจัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-[#94A3B8]">
-                    <RefreshCw className="w-6 h-6 mx-auto animate-spin text-[#2563EB] mb-2" />
-                    กำลังดึงข้อมูลสินค้า...
-                  </td>
-                </tr>
-              ) : paginatedItems.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-[#94A3B8]">
-                    ไม่พบข้อมูลสินค้าตามเงื่อนไข
-                  </td>
-                </tr>
-              ) : (
-                paginatedItems.map((it) => (
-                  <tr
-                    key={it.id}
-                    className="hover:bg-[#F5F8FC] transition-colors"
-                  >
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDetail(it.id)}
-                        className="font-mono font-bold text-[#2563EB] hover:text-[#164EAB] hover:underline"
-                        title="คลิกเพื่อดูข้อมูลสินค้า"
-                      >
-                        {it.itemCode}
-                      </button>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="font-semibold text-[#14213D]">
-                        {it.itemName}
-                      </div>
-                      {it.genericName && (
-                        <div className="text-[11px] text-[#64748B] italic break-words">
-                          {it.genericName}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap text-[#64748B]">
-                      {it.category?.name}
-                    </td>
-                    <td className="py-3 px-3 text-right font-medium text-[#14213D] tabular-nums whitespace-nowrap">
-                      ฿
-                      {it.standardCost.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}{" "}
-                      / {it.unit}
-                    </td>
-                    <td className="py-3 px-3 text-right text-[#64748B] tabular-nums whitespace-nowrap">
-                      {it.minStock?.toLocaleString()} -{" "}
-                      {it.maxStock?.toLocaleString()} {it.unit}
-                    </td>
-                    <td className="py-3 px-3 text-right font-bold text-amber-600 tabular-nums whitespace-nowrap">
-                      {it.reorderPoint?.toLocaleString()} {it.unit}
-                    </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                          Lot
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                          Exp
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap text-[#64748B] text-[11px]">
-                      {it.purchaseUnit && it.conversionRate > 1 ? (
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[#334155] font-medium border border-[#E2EAF4]">
-                          1 {it.purchaseUnit} = {it.conversionRate} {it.unit}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDetail(it.id)}
-                        className="px-3 py-1 bg-blue-50/80 hover:bg-blue-100 text-[#2563EB] rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 border border-blue-200 shadow-2xs"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>ดูข้อมูล</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+            <tbody className="divide-y divide-slate-100">{tableContent}</tbody>
           </table>
         </div>
 

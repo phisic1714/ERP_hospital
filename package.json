@@ -16,12 +16,13 @@
     "build:inventory": "npm run build --workspace=@erp/inventory",
     "dev:operations": "npm run dev --workspace=@erp/operations",
     "build:operations": "npm run build --workspace=@erp/operations",
-    "dev": "npm run dev:shell",
+    "dev": "node scripts/dev.mjs",
     "typecheck": "tsc --noEmit -p apps/shell && tsc --noEmit -p apps/inventory && tsc --noEmit -p apps/procurement && tsc --noEmit -p apps/operations && tsc --noEmit -p apps/mock-api",
     "dev:mock-api": "npm run dev --workspace=@erp/mock-api",
     "build:mock-api": "npm run build --workspace=@erp/mock-api",
     "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
-    "mock:init": "node scripts/init-mock-db.mjs"
+    "mock:init": "node scripts/init-mock-db.mjs",
+    "dev:all": "node scripts/dev.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -26,11 +26,21 @@ package.json; each app declares its workspace package dependencies.
 | Operations | npm run dev:operations | http://localhost:3002/operations/approvals/ |
 | Inventory | npm run dev:inventory | http://localhost:3003/inventory/ |
 
-`npm run dev` starts Shell. Run the other commands in separate terminals as
-needed. Each app can be developed directly at its own URL. Cross-app links use
-public paths on one origin and require your gateway/server routing when testing
-navigation between apps. The Docker gateway below provides that common origin;
-it serves built exports rather than the Next.js development servers.
+`npm run dev` starts all four frontend apps and the mock API together, generates
+Prisma Client, and initializes the mock database only if it is absent. Stop any
+previous dev terminals first, then open http://localhost:3000/home/. Shell proxies
+module pages, assets and /api to the appropriate local dev servers, so module
+navigation and mock data work through port 3000 without Docker or Nginx.
+
+The individual dev:<app> commands remain available. If using them, start every
+app needed for the routes you visit. Use Shell port 3000 as the common entry;
+direct module ports are intended for isolated module work.
+
+The dev launcher checks ports and stops all processes it started when Ctrl+C is
+pressed. Override ERP_DEV_SHELL_PORT, ERP_DEV_PROCUREMENT_PORT,
+ERP_DEV_OPERATIONS_PORT, ERP_DEV_INVENTORY_PORT or ERP_DEV_API_PORT if needed.
+Dev rewrites are disabled during production builds; Docker still serves static
+exports through its own Nginx gateway.
 
 `npm run build` builds all four apps. Use `npm run build:<app>` for one app, and
 `npm run typecheck` to check all four. Static files are exported separately to
