@@ -50,7 +50,11 @@ export async function POST(req: Request) {
     const body = await req.json();
     const {
       planId,
+      planNumber,
       departmentId,
+      departmentName,
+      allocationId,
+      budgetCode,
       warehouseId,
       requiredDate,
       urgency,
@@ -97,10 +101,20 @@ export async function POST(req: Request) {
 
     // Check Plan Budget if linked
     let fiscalYear = budgetYear ? Number(budgetYear) : new Date().getFullYear() + 543;
+    let effectivePlanNumber = planNumber || null;
+    let effectiveDeptName = departmentName || null;
+    let effectiveAllocationId = allocationId || null;
+    let effectiveBudgetCode = budgetCode || null;
+
     if (!isUnplanned && planId) {
       const plan = await prisma.procurementPlan.findUnique({ where: { id: planId } });
       if (plan) {
         fiscalYear = plan.fiscalYear;
+        effectivePlanNumber = plan.planNumber;
+        if (plan.departmentName) effectiveDeptName = plan.departmentName;
+        if (plan.allocationId) effectiveAllocationId = plan.allocationId;
+        if (plan.budgetCode) effectiveBudgetCode = plan.budgetCode;
+
         if (plan.remainingBudget < totalAmount) {
           return NextResponse.json(
             {
@@ -119,7 +133,11 @@ export async function POST(req: Request) {
         data: {
           prNumber,
           planId: isUnplanned ? null : planId || null,
+          planNumber: effectivePlanNumber,
           departmentId: departmentId || null,
+          departmentName: effectiveDeptName,
+          allocationId: effectiveAllocationId,
+          budgetCode: effectiveBudgetCode,
           warehouseId: warehouseId || null,
           requiredDate: requiredDate ? new Date(requiredDate) : null,
           urgency: urgency || 'NORMAL',

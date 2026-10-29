@@ -3,16 +3,6 @@ services:
   #   image: cloudflare/cloudflared:latest
   #   command: tunnel --url http://gateway:80
   #   restart: unless-stopped
-  shell:
-    image: erp-hospital-shell:local
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        APP_DIR: apps/shell
-        APP_BASE_PATH: ""
-    restart: unless-stopped
-
   inventory:
     image: erp-hospital-inventory:local
     build:
@@ -43,6 +33,36 @@ services:
         APP_BASE_PATH: /operations
     restart: unless-stopped
 
+  budget:
+    image: erp-hospital-budget:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: apps/budget
+        APP_BASE_PATH: /budget
+    restart: unless-stopped
+
+  hr:
+    image: erp-hospital-hr:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: apps/hr
+        APP_BASE_PATH: /hr
+    restart: unless-stopped
+
+  finance:
+    image: erp-hospital-finance:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_DIR: apps/finance
+        APP_BASE_PATH: /finance
+    restart: unless-stopped
+
   mock-api:
     image: erp-hospital-mock-api:local
     build:
@@ -56,17 +76,25 @@ services:
     restart: unless-stopped
 
   gateway:
-    image: nginx:stable-alpine
+    image: erp-hospital-gateway:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: gateway
+      args:
+        APP_DIR: apps/shell
     ports:
       - "127.0.0.1:${ERP_WEB_PORT:-8080}:80"
     volumes:
       - ./nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - shell
       - inventory
       - procurement
       - operations
       - mock-api
+      - budget
+      - hr
+      - finance
     restart: unless-stopped
 
 volumes:

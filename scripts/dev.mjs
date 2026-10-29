@@ -7,6 +7,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const definitions = [
   ['shell', 3000], ['procurement', 3001], ['operations', 3002],
   ['inventory', 3003], ['mock-api', 3004],
+  ['budget', 3005], ['hr', 3006], ['finance', 3007],
 ];
 const apps = definitions.map(([name, defaultPort]) => {
   const key = name === 'mock-api' ? 'API' : name.toUpperCase();

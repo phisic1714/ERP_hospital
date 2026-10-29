@@ -35,9 +35,11 @@ import {
   Percent,
 } from 'lucide-react';
 import { StatusBadge } from '@erp/ui';
+import { useBudget } from '@erp/app-context';
 
 export default function PurchaseOrdersPage() {
   const { addToast, refreshKey, triggerRefresh, currentUser } = useApp();
+  const { commitBudget, releaseBudget } = useBudget();
   const [pos, setPos] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
@@ -73,6 +75,9 @@ export default function PurchaseOrdersPage() {
   const [paymentTerms, setPaymentTerms] = useState('Credit 30 วัน');
   const [creditDays, setCreditDays] = useState(30);
   const [budgetReference, setBudgetReference] = useState('');
+  const [allocationId, setAllocationId] = useState('ALC-2569-001');
+  const [budgetCode, setBudgetCode] = useState('BG-69-PHARM-01');
+  const [departmentName, setDepartmentName] = useState('กลุ่มงานเภสัชกรรม (Pharmacy)');
   const [rfqNumber, setRfqNumber] = useState('');
   const [quotationNumber, setQuotationNumber] = useState('');
   const [supplierQuoteRef, setSupplierQuoteRef] = useState('');
@@ -149,10 +154,14 @@ export default function PurchaseOrdersPage() {
 
     const pr = approvedPRs.find((p) => p.id === prId);
     if (pr) {
+      const aId = pr.allocationId || pr.plan?.allocationId || 'ALC-2569-001';
+      const bCode = pr.budgetCode || pr.plan?.budgetCode || 'BG-69-PHARM-01';
+      const dName = pr.departmentName || pr.department?.name || 'กลุ่มงานเภสัชกรรม (Pharmacy)';
+      setAllocationId(aId);
+      setBudgetCode(bCode);
+      setDepartmentName(dName);
       setBudgetReference(
-        pr.plan
-          ? `แผนจัดซื้อ ${pr.plan.planNumber} (${pr.plan.name})`
-          : `นอกแผนงบประมาณ ปี ${pr.budgetYear || '2568'}`
+        `[${aId} · ${bCode}] ${pr.planNumber || pr.plan?.planNumber || (pr.isUnplanned ? 'จัดซื้อเร่งด่วน' : 'แผนจัดซื้อ')} (${dName})`
       );
       if (pr.lines && pr.lines.length > 0) {
         const mappedLines = pr.lines.map((l: any) => ({
@@ -250,6 +259,9 @@ export default function PurchaseOrdersPage() {
           paymentTerms,
           creditDays: Number(creditDays) || 30,
           budgetReference,
+          allocationId: allocationId || pr?.allocationId || 'ALC-2569-001',
+          budgetCode: budgetCode || pr?.budgetCode || 'BG-69-PHARM-01',
+          departmentName: departmentName || pr?.departmentName || 'กลุ่มงานเภสัชกรรม (Pharmacy)',
           attachmentName: attachmentName || null,
           attachmentUrl: attachmentName ? `/attachments/${attachmentName}` : null,
           remarks,
@@ -263,9 +275,15 @@ export default function PurchaseOrdersPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to create PO');
 
       if (autoApprove) {
+        commitBudget(
+          budgetCode || pr?.budgetCode || 'BG-69-PHARM-01',
+          data.totalAmount || data.netAmount || 0,
+          data.poNumber,
+          `บันทึกภาระผูกพัน PO ${data.poNumber} (อนุมัติทันที)`
+        );
         addToast(
           'success',
-          `สร้างและอนุมัติใบสั่งซื้อ ${data.poNumber} สำเร็จ ข้อมูลพร้อมสำหรับตรวจรับเข้าคลัง (GR)`
+          `สร้างและอนุมัติใบสั่งซื้อ ${data.poNumber} สำเร็จ (บันทึกภาระผูกพัน Commitment เรียบร้อย)`
         );
       } else {
         addToast('success', `สร้างใบสั่งซื้อ ${data.poNumber} สำเร็จ (สถานะ: รออนุมัติ)`);
@@ -299,14 +317,35 @@ export default function PurchaseOrdersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed action');
 
+      // Update Budget Management commitment & release (Rules 6 & 7)
+      const targetPO = pos.find((p) => p.id === poId);
+      const bCode = targetPO?.budgetCode || 'BG-69-PHARM-01';
+      const poAmt = targetPO?.totalAmount || targetPO?.netAmount || 0;
+
+      if (action === 'APPROVE') {
+        commitBudget(
+          bCode,
+          poAmt,
+          poNumber,
+          `บันทึกภาระผูกพัน (Commitment) จากใบสั่งซื้อที่อนุมัติ ${poNumber}`
+        );
+      } else if (action === 'REJECT') {
+        releaseBudget(
+          bCode,
+          poAmt,
+          poNumber,
+          `คืนวงเงินกันงบประมาณเนื่องจากปฏิเสธใบสั่งซื้อ ${poNumber}`
+        );
+      }
+
       const actionText =
         action === 'APPROVE'
-          ? `อนุมัติใบสั่งซื้อ ${poNumber} เรียบร้อยแล้ว (สร้างร่างเอกสารตรวจรับ GR ในระบบ)`
+          ? `อนุมัติใบสั่งซื้อ ${poNumber} เรียบร้อยแล้ว (บันทึก Commitment ในระบบงบประมาณ ฿${poAmt.toLocaleString()})`
           : action === 'SEND_TO_SUPPLIER'
           ? `ส่งใบสั่งซื้อ ${poNumber} ให้ผู้ขายเรียบร้อยแล้ว (สถานะ: สั่งซื้อแล้ว)`
           : action === 'CLOSE'
           ? `ปิดใบสั่งซื้อ ${poNumber} เรียบร้อยแล้ว (Completed)`
-          : `ปฏิเสธใบสั่งซื้อ ${poNumber} เรียบร้อยแล้ว`;
+          : `ปฏิเสธใบสั่งซื้อ ${poNumber} เรียบร้อยแล้ว (คืนวงเงินงบประมาณ)`;
 
       addToast('success', actionText);
 
@@ -512,11 +551,23 @@ export default function PurchaseOrdersPage() {
                       </td>
                       <td className="py-3 px-3 font-mono text-[11px] text-slate-600 whitespace-nowrap">
                         {po.prNumber ? (
-                          <span className="bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-0.5 rounded-lg">
-                            {po.prNumber}
-                          </span>
+                          <div>
+                            <span className="bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-0.5 rounded-lg font-bold">
+                              {po.prNumber}
+                            </span>
+                            <div className="text-[10px] text-emerald-800 font-semibold mt-1">
+                              {po.allocationId || 'ALC-2569-001'} · {po.budgetCode || 'BG-69-PHARM-01'}
+                            </div>
+                          </div>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <div>
+                            <span className="text-slate-400">-</span>
+                            {po.allocationId && (
+                              <div className="text-[10px] text-emerald-800 font-semibold mt-0.5">
+                                {po.allocationId}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="py-3 px-3">

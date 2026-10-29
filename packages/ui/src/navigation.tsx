@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 
 const AppBasePath = createContext('');
-const modulePaths = ['/inventory', '/procurement', '/operations'];
+const modulePaths = ['/inventory', '/procurement', '/operations', '/budget', '/hr', '/finance'];
 
 export function AppRoutingProvider({ basePath, children }: { basePath: string; children: ReactNode }) {
   return <AppBasePath.Provider value={basePath}>{children}</AppBasePath.Provider>;

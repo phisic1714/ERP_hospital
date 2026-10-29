@@ -14,6 +14,9 @@ import {
   Home,
   Check,
   Package,
+  Users,
+  PieChart,
+  Landmark,
 } from 'lucide-react';
 
 export function Topbar() {
@@ -26,7 +29,10 @@ export function Topbar() {
 
   const isHome = pathname === '/home';
   const isProcurement = pathname.startsWith('/procurement');
-  const isInventory = !isHome && !isProcurement;
+  const isHR = pathname.startsWith('/hr');
+  const isBudget = pathname.startsWith('/budget');
+  const isFinance = pathname.startsWith('/finance');
+  const isInventory = !isHome && !isProcurement && !isHR && !isBudget && !isFinance;
 
   useEffect(() => {
     fetch('/api/warehouses')
@@ -76,6 +82,12 @@ export function Topbar() {
                   ? 'bg-[#2563EB]'
                   : isProcurement
                   ? 'bg-[#F28C28]'
+                  : isHR
+                  ? 'bg-[#0D9488]'
+                  : isBudget
+                  ? 'bg-[#059669]'
+                  : isFinance
+                  ? 'bg-[#0284C7]'
                   : 'bg-[#2563EB]'
               }`}
             >
@@ -83,6 +95,12 @@ export function Topbar() {
                 <LayoutGrid className="w-3.5 h-3.5" />
               ) : isProcurement ? (
                 <ShoppingCart className="w-3.5 h-3.5" />
+              ) : isHR ? (
+                <Users className="w-3.5 h-3.5" />
+              ) : isBudget ? (
+                <PieChart className="w-3.5 h-3.5" />
+              ) : isFinance ? (
+                <Landmark className="w-3.5 h-3.5" />
               ) : (
                 <Package className="w-3.5 h-3.5" />
               )}
@@ -93,10 +111,26 @@ export function Topbar() {
                   ? 'ERP Center'
                   : isProcurement
                   ? 'ระบบจัดซื้อจัดจ้าง'
+                  : isHR
+                  ? 'ระบบบริหารทรัพยากรบุคคล'
+                  : isBudget
+                  ? 'ระบบบริหารงบประมาณ'
+                  : isFinance
+                  ? 'ระบบบริหารการเงินและบัญชี'
                   : 'ระบบคลังสินค้าและพัสดุ'}
               </span>
               <span className="text-[10px] text-[#94A3B8] font-normal block">
-                {isHome ? 'หน้าหลักองค์กร' : isProcurement ? 'Procurement' : 'Inventory'}
+                {isHome
+                  ? 'หน้าหลักองค์กร'
+                  : isProcurement
+                  ? 'Procurement'
+                  : isHR
+                  ? 'Human Resource (HRM)'
+                  : isBudget
+                  ? 'Budget Management'
+                  : isFinance
+                  ? 'Finance & Accounting'
+                  : 'Inventory'}
               </span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] ml-0.5" />
@@ -172,6 +206,65 @@ export function Topbar() {
                     </div>
                     {isProcurement && <Check className="w-4 h-4 text-[#F28C28]" />}
                   </Link>
+
+                  {/* 4. HR & Personnel */}
+                  <Link
+                    href="/hr"
+                    onClick={() => setShowAppSwitcher(false)}
+                    className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition-colors ${
+                      isHR ? 'bg-teal-50 font-bold text-[#0D9488]' : 'hover:bg-[#F5F8FC] text-[#64748B]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-[#0D9488] text-white flex items-center justify-center shadow-xs">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-[#14213D]">ทรัพยากรบุคคล (Hospital HRM)</div>
+                        <div className="text-[10px] text-[#94A3B8]">บุคลากร ตารางเวร ใบประกอบวิชาชีพ เงินเดือน</div>
+                      </div>
+                    </div>
+                    {isHR && <Check className="w-4 h-4 text-[#0D9488]" />}
+                  </Link>
+
+                  {/* 5. Budget Management */}
+                  <Link
+                    href="/budget"
+                    onClick={() => setShowAppSwitcher(false)}
+                    className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition-colors ${
+                      isBudget ? 'bg-emerald-50 font-bold text-[#059669]' : 'hover:bg-[#F5F8FC] text-[#64748B]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-[#059669] text-white flex items-center justify-center shadow-xs">
+                        <PieChart className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-[#14213D]">ระบบบริหารงบประมาณ (Budget)</div>
+                        <div className="text-[10px] text-[#94A3B8]">จัดทำงบประจำปี จัดสรรวงเงิน ควบคุมผูกพัน</div>
+                      </div>
+                    </div>
+                    {isBudget && <Check className="w-4 h-4 text-[#059669]" />}
+                  </Link>
+
+                  {/* 6. Finance & Accounting (Disabled / Not Ready) */}
+                  <div
+                    className="flex items-center justify-between p-2.5 rounded-xl text-xs bg-slate-50/70 text-slate-400 cursor-not-allowed opacity-75 select-none"
+                    title="ระบบบริหารการเงินและบัญชียังไม่เปิดใช้งาน"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-300 text-white flex items-center justify-center">
+                        <Landmark className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-500">การเงินและบัญชี (Finance & Accounting)</div>
+                        <div className="text-[10px] text-slate-400">ยังไม่พร้อมใช้งาน (อยู่ระหว่างพัฒนา)</div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-500 text-[9px] font-bold">
+                      ปิดไว้
+                    </span>
+                  </div>
                 </div>
               </div>
             </>

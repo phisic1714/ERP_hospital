@@ -102,11 +102,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const vatAmount = Math.round(subtotal * 0.07 * 100) / 100;
     const netAmount = subtotal + vatAmount;
 
+    const effectiveAllocationId = pr.allocationId || pr.plan?.allocationId || 'ALC-2569-001';
+    const effectiveBudgetCode = pr.budgetCode || pr.plan?.budgetCode || 'BG-69-PHARM-01';
+    const effectiveDeptName = pr.departmentName || pr.department?.name || 'กลุ่มงานเภสัชกรรม (Pharmacy)';
+
     const budgetRef = pr.plan
-      ? `${pr.plan.planNumber} • ${pr.plan.name} (${pr.plan.fiscalYear})`
-      : pr.isUnplanned
-      ? 'นอกแผนงบประมาณ (Unplanned)'
-      : 'งบประมาณดำเนินการทั่วไป';
+      ? `[${effectiveAllocationId} · ${effectiveBudgetCode}] ${pr.plan.planNumber} • ${pr.plan.name}`
+      : `[${effectiveAllocationId} · ${effectiveBudgetCode}] ${pr.isUnplanned ? 'จัดซื้อเร่งด่วนนอกแผน' : 'งบประมาณดำเนินการ'}`;
 
     const po = await prisma.$transaction(async (tx) => {
       // 1. Create PO with full financial fields & references
@@ -115,6 +117,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           poNumber,
           prId: pr.id,
           prNumber: pr.prNumber,
+          allocationId: effectiveAllocationId,
+          budgetCode: effectiveBudgetCode,
+          departmentName: effectiveDeptName,
           supplierId,
           orderDate: new Date(),
           expectedDate: expectedDate ? new Date(expectedDate) : new Date(Date.now() + 7 * 24 * 3600 * 1000),

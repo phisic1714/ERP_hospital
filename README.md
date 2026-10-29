@@ -10,6 +10,9 @@ apps/
   inventory/src/app/      # /inventory and inventory subpages
   procurement/src/app/    # /procurement and procurement subpages
   operations/src/app/     # /operations/approvals, reports and audit
+  budget/src/app/         # /budget and budget management pages
+  hr/src/app/             # /hr and HR management pages
+  finance/src/app/        # /finance prototypes (Home remains disabled upstream)
 packages/
   ui/                    # Layout, navigation, global CSS and components
   app-context/           # Provider and shared types
@@ -25,8 +28,11 @@ package.json; each app declares its workspace package dependencies.
 | Procurement | npm run dev:procurement | http://localhost:3001/procurement/ |
 | Operations | npm run dev:operations | http://localhost:3002/operations/approvals/ |
 | Inventory | npm run dev:inventory | http://localhost:3003/inventory/ |
+| Budget | npm run dev:budget | http://localhost:3005/budget/ |
+| HR | npm run dev:hr | http://localhost:3006/hr/ |
+| Finance | npm run dev:finance | http://localhost:3007/finance/ |
 
-`npm run dev` starts all four frontend apps and the mock API together, generates
+`npm run dev` starts all seven frontend apps and the mock API together, generates
 Prisma Client, and initializes the mock database only if it is absent. Stop any
 previous dev terminals first, then open http://localhost:3000/home/. Shell proxies
 module pages, assets and /api to the appropriate local dev servers, so module
@@ -38,15 +44,17 @@ direct module ports are intended for isolated module work.
 
 The dev launcher checks ports and stops all processes it started when Ctrl+C is
 pressed. Override ERP_DEV_SHELL_PORT, ERP_DEV_PROCUREMENT_PORT,
-ERP_DEV_OPERATIONS_PORT, ERP_DEV_INVENTORY_PORT or ERP_DEV_API_PORT if needed.
+ERP_DEV_OPERATIONS_PORT, ERP_DEV_INVENTORY_PORT, ERP_DEV_BUDGET_PORT,
+ERP_DEV_HR_PORT, ERP_DEV_FINANCE_PORT or ERP_DEV_API_PORT if needed.
 Dev rewrites are disabled during production builds; Docker still serves static
 exports through its own Nginx gateway.
 
-`npm run build` builds all four apps. Use `npm run build:<app>` for one app, and
-`npm run typecheck` to check all four. Static files are exported separately to
+`npm run build` builds all seven apps. Use `npm run build:<app>` for one app, and
+`npm run typecheck` to check all apps. Static files are exported separately to
 `apps/<app>/out/`. No Node server is required to serve these exports.
 
-App configs set their basePath once: /inventory, /procurement or /operations.
+App configs set their basePath once: /inventory, /procurement, /operations,
+/budget, /hr or /finance.
 Do not repeat this segment in src/app. Shell has no basePath and owns /home.
 When serving exported modules, mount each out directory at its public prefix,
 including its _next assets. Backend /api/... requests retain their existing
@@ -66,19 +74,24 @@ See packages/README.md for package imports and docs/ROUTES.md for the route map.
 ## Docker with local Gateway Nginx
 
 All Nginx configuration lives in this repository. No host Nginx installation or
-host nginx.conf changes are required. nginx/static.conf serves the exports inside
-each application image, while nginx/gateway.conf routes requests to those images.
-Only the Gateway publishes a port, bound to localhost by default.
+host nginx.conf changes are required. nginx/static.conf serves module exports;
+nginx/gateway.conf serves Shell exports locally and proxies module/API requests.
+Only the Gateway publishes a port, bound to localhost by default. Shell source
+stays in apps/shell, but its static files are packaged into the Dockerfile gateway
+target; there is no separate Shell service or container.
 
 ```powershell
-docker compose build shell
+docker compose build gateway
 docker compose build inventory
 docker compose build procurement
 docker compose build operations
+docker compose build budget
+docker compose build hr
+docker compose build finance
 docker compose up -d
 ```
 
-Sequential builds limit memory use when building all four apps on Docker Desktop.
+Sequential builds limit memory use when building all seven apps on Docker Desktop.
 You can also use `docker compose up -d --build` to build and start together.
 
 Open http://localhost:8080/home/, http://localhost:8080/inventory/,
@@ -139,3 +152,32 @@ npm run dev:mock-api
 This creates prisma/mock.db only if absent, and serves the API on port 3004.
 Docker uses a separate database volume. The mock API retains the original demo
 user/role behavior and is intended for development, not production authentication.
+
+## Budget and HR demo state
+
+BudgetProvider and HRProvider come from upstream main and are shared through
+@erp/app-context. Their demo arrays persist in sessionStorage on the common
+origin so navigating from Budget to Procurement does not discard changes.
+They remain mock state, scoped to one browser tab, not production database-backed
+HR/Budget services. Finance pages are imported, but the Home card stays disabled
+as in upstream main.
+
+When a mock database schema changes, mock:init first creates a consistent SQLite
+backup under a .local-backups directory beside the database, then applies Prisma
+db push without accept-data-loss. Existing records are retained and seeds are
+not rerun. New databases are initialized with the current schema as before.
+
+See docs/UPSTREAM_SYNC_2026-10-29.md for the source mapping of this update.
+
+### Updating Home / Shell in Docker
+
+Shell is part of the Gateway image. After changing apps/shell or shared UI used
+by Home, rebuild Gateway (local npm run dev:shell remains available unchanged):
+
+```powershell
+docker compose build gateway
+docker compose up -d --no-deps gateway
+```
+
+A configuration reload alone does not update the baked-in Home files. Module
+containers and the mock database volume are independent of this Gateway rebuild.

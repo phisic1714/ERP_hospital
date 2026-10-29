@@ -28,9 +28,11 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { StatusBadge } from '@erp/ui';
+import { useBudget } from '@erp/app-context';
 
 export default function ProcurementPlansPage() {
   const { addToast, refreshKey, triggerRefresh, currentUser } = useApp();
+  const { allocations, getAllocationBudgetInfo } = useBudget();
   const [plans, setPlans] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,12 +43,14 @@ export default function ProcurementPlansPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPlanDetail, setSelectedPlanDetail] = useState<any | null>(null);
 
-  // Modal
+  // Modal & Form State linked to Budget Allocation
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [fiscalYear, setFiscalYear] = useState('2569');
-  const [name, setName] = useState('');
-  const [categoryCode, setCategoryCode] = useState('ALL');
-  const [allocatedBudget, setAllocatedBudget] = useState('1000000');
+  const [selectedDepartment, setSelectedDepartment] = useState('กลุ่มงานเภสัชกรรม (Pharmacy)');
+  const [selectedAllocNo, setSelectedAllocNo] = useState('ALC-2569-001');
+  const [name, setName] = useState('แผนจัดซื้อเวชภัณฑ์ประจำปี 2569');
+  const [categoryCode, setCategoryCode] = useState('MED');
+  const [targetBudget, setTargetBudget] = useState('500000');
   const [remarks, setRemarks] = useState('');
   const [planLines, setPlanLines] = useState<any[]>([
     { itemId: '', targetQuantity: 1000, estimatedUnitPrice: 50 },
@@ -112,10 +116,35 @@ export default function ProcurementPlansPage() {
     setPlanLines(updated);
   };
 
+  // Departments from Budget Allocations
+  const availableDepartments = Array.from(new Set(allocations.map((a) => a.departmentName)));
+  const deptAllocations = allocations.filter((a) => a.departmentName === selectedDepartment);
+  const currentAlloc =
+    deptAllocations.find((a) => a.allocNo === selectedAllocNo) ||
+    deptAllocations[0] ||
+    allocations[0];
+
+  const allocBudgetInfo = currentAlloc
+    ? getAllocationBudgetInfo(currentAlloc.allocNo)
+    : {
+        allocatedAmount: 1000000,
+        remainingBudget: 750000,
+      };
+
+  const isBudgetExceeded = Number(targetBudget) > allocBudgetInfo.remainingBudget;
+
   const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       addToast('warning', 'กรุณาระบุชื่อแผนจัดซื้อ');
+      return;
+    }
+
+    if (isBudgetExceeded) {
+      addToast(
+        'error',
+        `กรอบวงเงินที่ขอตั้ง (฿${Number(targetBudget).toLocaleString()}) เกินวงเงินจัดสรรคงเหลือ (฿${allocBudgetInfo.remainingBudget.toLocaleString()}) กรุณาขอโอนงบก่อน`
+      );
       return;
     }
 
@@ -127,7 +156,11 @@ export default function ProcurementPlansPage() {
           fiscalYear,
           name,
           categoryCode,
-          allocatedBudget: Number(allocatedBudget),
+          departmentName: selectedDepartment,
+          allocationId: currentAlloc?.allocNo || 'ALC-2569-001',
+          budgetCode: currentAlloc?.budgetCode || 'BG-69-PHARM-01',
+          targetBudget: Number(targetBudget) || 500000,
+          allocatedBudget: allocBudgetInfo.allocatedAmount,
           remarks,
           createdBy: currentUser.name,
           lines: planLines,
@@ -137,7 +170,7 @@ export default function ProcurementPlansPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create plan');
 
-      addToast('success', `สร้างแผนจัดซื้อ ${data.planNumber} สำเร็จ`);
+      addToast('success', `สร้างแผนจัดซื้อ ${data.planNumber} สำเร็จ (ผูกกับ ${currentAlloc?.allocNo})`);
       setShowCreateModal(false);
       setName('');
       setRemarks('');
@@ -309,6 +342,14 @@ export default function ProcurementPlansPage() {
                         <div className="font-semibold text-xs text-[#14213D] mt-1 line-clamp-1">
                           {p.name}
                         </div>
+                        {p.allocationId && (
+                          <div className="text-[10px] font-mono text-emerald-700 font-bold mt-0.5">
+                            [{p.allocationId} · {p.budgetCode || 'BG'}]
+                          </div>
+                        )}
+                        <div className="text-[10px] text-slate-500 mt-0.5 truncate">
+                          {p.departmentName || 'กลุ่มงานเภสัชกรรม (Pharmacy)'}
+                        </div>
                       </div>
                       <StatusBadge status={p.status} />
                     </div>
@@ -316,7 +357,7 @@ export default function ProcurementPlansPage() {
                     <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
                       <span>ปีงบ {p.fiscalYear}</span>
                       <span className="font-semibold text-[#14213D] tabular-nums">
-                        {p.allocatedBudget.toLocaleString()} บ.
+                        {(p.targetBudget || p.allocatedBudget).toLocaleString()} บ.
                       </span>
                     </div>
 
@@ -340,7 +381,7 @@ export default function ProcurementPlansPage() {
               {/* Plan Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-[#E2EAF4] pb-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       onClick={() => {
@@ -353,6 +394,9 @@ export default function ProcurementPlansPage() {
                       {selectedPlan.planNumber}
                     </button>
                     <StatusBadge status={selectedPlan.status} />
+                    <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                      {selectedPlan.allocationId || 'ALC-2569-001'} · {selectedPlan.budgetCode || 'BG-69-PHARM-01'}
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
@@ -366,7 +410,14 @@ export default function ProcurementPlansPage() {
                     </button>
                   </div>
                   <h3 className="text-lg font-bold text-[#14213D] mt-2">{selectedPlan.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1">{selectedPlan.remarks || 'ไม่มีหมายเหตุเพิ่มเติม'}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-600">
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-semibold text-slate-800">
+                      {selectedPlan.departmentName || 'กลุ่มงานเภสัชกรรม (Pharmacy)'}
+                    </span>
+                    <span>•</span>
+                    <span>{selectedPlan.remarks || 'ไม่มีหมายเหตุเพิ่มเติม'}</span>
+                  </div>
                 </div>
 
                 <div className="text-right">
@@ -378,9 +429,12 @@ export default function ProcurementPlansPage() {
               {/* Progress & Financials */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3.5 bg-[#F5F8FC] rounded-xl border border-[#E2EAF4]">
-                  <div className="text-[11px] text-slate-500">กรอบงบประมาณที่ได้รับจัดสรร</div>
+                  <div className="text-[11px] text-slate-500">กรอบงบประมาณแผนจัดซื้อ</div>
                   <div className="text-base font-bold text-[#14213D] mt-1 tabular-nums">
-                    {selectedPlan.allocatedBudget.toLocaleString()} บาท
+                    {(selectedPlan.targetBudget || selectedPlan.allocatedBudget).toLocaleString()} บาท
+                  </div>
+                  <div className="text-[10px] text-emerald-700 mt-0.5">
+                    จัดสรรรวม: ฿{(selectedPlan.allocatedBudget || 1000000).toLocaleString()}
                   </div>
                 </div>
                 <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-100">
@@ -388,12 +442,14 @@ export default function ProcurementPlansPage() {
                   <div className="text-base font-bold text-amber-700 mt-1 tabular-nums">
                     {selectedPlan.committedBudget.toLocaleString()} บาท
                   </div>
+                  <div className="text-[10px] text-amber-600 mt-0.5">ตัดยอดผูกพันแล้ว</div>
                 </div>
                 <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-100">
                   <div className="text-[11px] text-emerald-700">งบประมาณคงเหลือพร้อมขอซื้อ</div>
                   <div className="text-base font-bold text-emerald-700 mt-1 tabular-nums">
                     {selectedPlan.remainingBudget.toLocaleString()} บาท
                   </div>
+                  <div className="text-[10px] text-emerald-600 mt-0.5">พร้อมเปิดใบขอซื้อ (PR)</div>
                 </div>
               </div>
 
@@ -483,49 +539,148 @@ export default function ProcurementPlansPage() {
             <form onSubmit={handleCreatePlan} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">ปีงบประมาณ</label>
-                  <input
-                    type="number"
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    ปีงบประมาณ <span className="text-rose-500">*</span>
+                  </label>
+                  <select
                     value={fiscalYear}
                     onChange={(e) => setFiscalYear(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28]"
-                    required
-                  />
+                    className="w-full px-3 py-2 border rounded-xl bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28] font-bold"
+                  >
+                    <option value="2569">2569 (ปีงบประมาณปัจจุบัน)</option>
+                    <option value="2570">2570</option>
+                  </select>
                 </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    หน่วยงาน / กลุ่มงาน (เจ้าของงบประมาณ) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={selectedDepartment}
+                    onChange={(e) => {
+                      setSelectedDepartment(e.target.value);
+                      const matched = allocations.find((a) => a.departmentName === e.target.value);
+                      if (matched) setSelectedAllocNo(matched.allocNo);
+                    }}
+                    className="w-full px-3 py-2 border rounded-xl bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28] font-semibold text-[#14213D] cursor-pointer"
+                  >
+                    {availableDepartments.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* รายการจัดสรรงบประมาณ (Allocation ID) */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  รายการจัดสรรงบประมาณ (Allocation ID · Budget Code) <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={selectedAllocNo}
+                  onChange={(e) => setSelectedAllocNo(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-xl bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28] font-mono text-emerald-800 font-bold cursor-pointer"
+                >
+                  {deptAllocations.map((a) => (
+                    <option key={a.id} value={a.allocNo}>
+                      {a.allocNo} · {a.budgetCode} — {a.projectName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Automatic Budget Display: วงเงินจัดสรร & วงเงินคงเหลือ (Read-only from Budget System) */}
+              <div className="grid grid-cols-2 gap-3 p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                <div>
+                  <span className="text-[11px] font-semibold text-emerald-800 block">
+                    วงเงินจัดสรร (ดึงจากระบบ Budget)
+                  </span>
+                  <div className="text-base font-extrabold text-[#14213D] mt-0.5 tabular-nums">
+                    ฿{allocBudgetInfo.allocatedAmount.toLocaleString()}{' '}
+                    <span className="text-[10px] font-normal text-slate-500">บาท</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700">รหัส {currentAlloc?.allocNo}</span>
+                </div>
+                <div className="border-l border-emerald-200 pl-3">
+                  <span className="text-[11px] font-semibold text-emerald-800 block">
+                    วงเงินคงเหลือ (ดึงอัตโนมัติ)
+                  </span>
+                  <div className="text-base font-extrabold text-emerald-700 mt-0.5 tabular-nums">
+                    ฿{allocBudgetInfo.remainingBudget.toLocaleString()}{' '}
+                    <span className="text-[10px] font-normal text-slate-500">บาท</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500">พร้อมนำไปตั้งกรอบแผน</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">หมวดหมู่สินค้า</label>
                   <select
                     value={categoryCode}
                     onChange={(e) => setCategoryCode(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28] cursor-pointer"
+                    className="w-full px-3 py-2 border rounded-xl bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28] cursor-pointer"
                   >
-                    <option value="ALL">ทุกหมวดหมู่ (All Categories)</option>
-                    <option value="MED">ยาและสารน้ำ (Medicine)</option>
+                    <option value="MED">ยาและเวชภัณฑ์ (Medicine)</option>
                     <option value="SUPPLY">เวชภัณฑ์ทางการแพทย์ (Medical Supplies)</option>
                     <option value="GEN">วัสดุทั่วไปและน้ำยาฆ่าเชื้อ (General Supplies)</option>
+                    <option value="ALL">ทุกหมวดหมู่ (All Categories)</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    กรอบวงเงินแผนจัดซื้อ (บาท) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={targetBudget}
+                    onChange={(e) => setTargetBudget(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-xl font-bold text-sm tabular-nums focus:outline-none focus:ring-2 ${
+                      isBudgetExceeded
+                        ? 'border-rose-400 bg-rose-50 text-rose-700 focus:ring-rose-500'
+                        : 'border-[#E2EAF4] bg-[#F5F8FC] text-[#D97706] focus:ring-[#F28C28]'
+                    }`}
+                    required
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">ชื่อแผนการจัดซื้อ</label>
-                <input
-                  type="text"
-                  placeholder="เช่น แผนจัดซื้อยาหลักประจำปีงบประมาณ 2569"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28]"
-                  required
-                />
-              </div>
+              {/* Real-time Validation Message */}
+              {isBudgetExceeded ? (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 font-semibold flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div>ระบบตรวจสอบ: วงเงินแผนจัดซื้อเกินวงเงินจัดสรรคงเหลือ!</div>
+                    <div className="text-[11px] font-normal text-rose-600 mt-0.5">
+                      ยอดที่ระบุ ฿{Number(targetBudget).toLocaleString()} เกินวงเงินคงเหลือ ฿
+                      {allocBudgetInfo.remainingBudget.toLocaleString()} กรุณาปรับลดวงเงิน หรือทำเรื่องขอโอน/เพิ่มกรอบงบประมาณที่โมดูลงบประมาณก่อน
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-emerald-50/60 border border-emerald-200/80 rounded-xl text-emerald-800 text-[11px] font-medium flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>
+                    ระบบตรวจสอบ: อยู่ในกรอบวงเงินจัดสรรคงเหลือ (สามารถนำไปใช้ได้สูงสุด ฿
+                    {allocBudgetInfo.remainingBudget.toLocaleString()} บาท)
+                  </span>
+                </div>
+              )}
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">กรอบงบประมาณที่ได้รับอนุมัติ (บาท)</label>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  ชื่อแผนการจัดซื้อ <span className="text-rose-500">*</span>
+                </label>
                 <input
-                  type="number"
-                  value={allocatedBudget}
-                  onChange={(e) => setAllocatedBudget(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28] font-bold text-[#D97706]"
+                  type="text"
+                  placeholder="เช่น แผนจัดซื้อเวชภัณฑ์ประจำปี 2569"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-xl bg-[#F5F8FC] focus:bg-white focus:ring-2 focus:ring-[#F28C28]"
                   required
                 />
               </div>
@@ -604,7 +759,7 @@ export default function ProcurementPlansPage() {
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
                   placeholder="รายละเอียดวัตถุประสงค์ของแผนจัดซื้อ..."
-                  className="w-full px-3 py-2 border rounded-lg bg-[#F5F8FC] focus:bg-white text-xs"
+                  className="w-full px-3 py-2 border rounded-xl bg-[#F5F8FC] focus:bg-white text-xs"
                 />
               </div>
 
@@ -618,7 +773,12 @@ export default function ProcurementPlansPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white font-semibold rounded-xl shadow-sm"
+                  disabled={isBudgetExceeded}
+                  className={`px-5 py-2 font-semibold rounded-xl shadow-sm transition-all ${
+                    isBudgetExceeded
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                      : 'bg-[#F28C28] hover:bg-[#D97706] text-white'
+                  }`}
                 >
                   บันทึกแผนจัดซื้อ (Save Plan)
                 </button>
@@ -783,6 +943,11 @@ export default function ProcurementPlansPage() {
               <div className="bg-white p-5 rounded-2xl border border-[#E2EAF4] shadow-2xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E2EAF4] pb-3">
                   <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                        {selectedPlanDetail.allocationId || 'ALC-2569-001'} · {selectedPlanDetail.budgetCode || 'BG-69-PHARM-01'}
+                      </span>
+                    </div>
                     <h3 className="font-bold text-base text-[#14213D]">{selectedPlanDetail.name}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {selectedPlanDetail.remarks || 'ไม่มีหมายเหตุเพิ่มเติม'}
@@ -798,6 +963,10 @@ export default function ProcurementPlansPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 text-xs">
                   <div>
+                    <span className="text-slate-400 block">หน่วยงาน / กลุ่มงาน</span>
+                    <span className="font-semibold text-[#14213D]">{selectedPlanDetail.departmentName || 'กลุ่มงานเภสัชกรรม (Pharmacy)'}</span>
+                  </div>
+                  <div>
                     <span className="text-slate-400 block">ผู้จัดทำแผน</span>
                     <span className="font-semibold text-slate-700">{selectedPlanDetail.createdBy || 'เจ้าหน้าที่จัดซื้อ'}</span>
                   </div>
@@ -808,12 +977,8 @@ export default function ProcurementPlansPage() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">จำนวนรายการพัสดุ</span>
-                    <span className="font-semibold text-[#14213D]">{selectedPlanDetail.lines?.length || 0} รายการ</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block">สถานะแผนจัดซื้อ</span>
-                    <span className="font-semibold text-emerald-600">อนุมัติกรอบวงเงินแล้ว</span>
+                    <span className="text-slate-400 block">สถานะกรอบวงเงิน</span>
+                    <span className="font-semibold text-emerald-600">จัดสรรจาก Budget แล้ว</span>
                   </div>
                 </div>
               </div>

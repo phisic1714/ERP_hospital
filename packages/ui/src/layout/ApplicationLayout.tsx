@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { AppProvider } from '@erp/app-context';
+import { AppProvider, BudgetProvider, HRProvider } from '@erp/app-context';
 import { AppRoutingProvider } from '../navigation';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
@@ -18,6 +18,8 @@ export function ApplicationLayout({ children, basePath = '' }: { children: React
       <body className="bg-[#F5F8FC] text-[#14213D] antialiased selection:bg-blue-100 selection:text-blue-900">
         <AppRoutingProvider basePath={basePath}>
           <AppProvider>
+            <HRProvider>
+            <BudgetProvider>
             <div className="flex min-h-screen bg-[#F5F8FC]">
               <Sidebar />
               <div className="flex-1 flex flex-col min-w-0">
@@ -26,6 +28,8 @@ export function ApplicationLayout({ children, basePath = '' }: { children: React
               </div>
             </div>
             <ToastContainer />
+            </BudgetProvider>
+            </HRProvider>
           </AppProvider>
         </AppRoutingProvider>
       </body>

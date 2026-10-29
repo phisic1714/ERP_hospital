@@ -3,11 +3,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { syncMockSchema, recordMockSchema } from './sync-mock-schema.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(process.env.MOCK_DATABASE_PATH || resolve(root, 'prisma/mock.db'));
 
 if (existsSync(target)) {
+  await syncMockSchema(target);
   console.log('Existing mock database retained. Seed skipped.');
 } else {
   mkdirSync(dirname(target), { recursive: true });
@@ -20,5 +22,6 @@ if (existsSync(target)) {
   for (const seed of ['seed.js', 'seed-procurement.js', 'seed-sourcing.js']) run([`prisma/${seed}`]);
   if (existsSync(target)) throw new Error('Database appeared during setup; existing file preserved.');
   renameSync(staging, target);
+  recordMockSchema(target);
   console.log('New mock database ready. Existing database files were not changed.');
 }

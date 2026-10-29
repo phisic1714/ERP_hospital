@@ -258,7 +258,11 @@ model ProcurementPlan {
   name            String
   categoryCode    String    @default("ALL") // MED, SUPPLY, GEN, ALL
   departmentId    String?
-  allocatedBudget Float     @default(0.0)
+  departmentName  String?   // กลุ่มงานเจ้าของงบประมาณ เช่น กลุ่มงานเภสัชกรรม (Pharmacy)
+  allocationId    String?   // รหัสจัดสรรงบประมาณ เช่น ALC-2569-001
+  budgetCode      String?   // รหัสงบประมาณ เช่น BG-69-PHARM-01
+  targetBudget    Float?    @default(0.0) // กรอบวงเงินแผนจัดซื้อที่ขอตั้ง
+  allocatedBudget Float     @default(0.0) // วงเงินจัดสรรที่ดึงจากระบบ Budget
   committedBudget Float     @default(0.0)
   remainingBudget Float     @default(0.0)
   status          String    @default("ACTIVE") // DRAFT, PENDING_APPROVAL, APPROVED, ACTIVE, CLOSED, REJECTED
@@ -294,7 +298,11 @@ model PurchaseRequisition {
   id              String    @id @default(cuid())
   prNumber        String    @unique // PR-YYYYMM-XXXX
   planId          String?
+  planNumber      String?   // เลขที่แผนจัดซื้อ เช่น PP-2569-0001
   departmentId    String?
+  departmentName  String?   // หน่วยงานที่ขอซื้อ เช่น กลุ่มงานเภสัชกรรม (Pharmacy)
+  allocationId    String?   // รหัสจัดสรรงบประมาณ เช่น ALC-2569-001
+  budgetCode      String?   // รหัสงบประมาณ เช่น BG-69-PHARM-01
   warehouseId     String?
   requestDate     DateTime  @default(now())
   requiredDate    DateTime?
@@ -470,6 +478,9 @@ model ProcurementPO {
   paymentTerms     String?   @default("Credit 30 วัน")
   creditDays       Int?      @default(30)
   budgetReference  String?
+  allocationId     String?   // ALC-2569-001
+  budgetCode       String?   // BG-69-PHARM-01
+  departmentName   String?   // กลุ่มงานเภสัชกรรม (Pharmacy)
   subtotal         Float     @default(0.0)
   discount         Float     @default(0.0)
   taxRate          Float     @default(7.0)

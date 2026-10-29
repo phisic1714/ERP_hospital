@@ -9,12 +9,16 @@ COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/procurement/package.json ./apps/procurement/package.json
 COPY apps/operations/package.json ./apps/operations/package.json
 COPY apps/mock-api/package.json ./apps/mock-api/package.json
+COPY apps/budget/package.json ./apps/budget/package.json
+COPY apps/hr/package.json ./apps/hr/package.json
+COPY apps/finance/package.json ./apps/finance/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 COPY packages/app-context/package.json ./packages/app-context/package.json
 COPY packages/next-config/package.json ./packages/next-config/package.json
 RUN npm ci --no-audit --no-fund
 COPY prisma ./prisma
 COPY scripts/init-mock-db.mjs ./scripts/init-mock-db.mjs
+COPY scripts/sync-mock-schema.mjs ./scripts/sync-mock-schema.mjs
 COPY apps/mock-api ./apps/mock-api
 COPY tsconfig.json ./
 RUN npm run prisma:generate

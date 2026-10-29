@@ -35,11 +35,27 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { fiscalYear, name, categoryCode, allocatedBudget, startDate, endDate, remarks, lines, createdBy } = body;
+    const {
+      fiscalYear,
+      name,
+      categoryCode,
+      departmentId,
+      departmentName,
+      allocationId,
+      budgetCode,
+      targetBudget,
+      allocatedBudget,
+      startDate,
+      endDate,
+      remarks,
+      lines,
+      createdBy,
+    } = body;
 
     const planNumber = await generateDocumentNumber('PP');
 
     const totalAllocated = Number(allocatedBudget) || 0;
+    const planTargetBudget = Number(targetBudget) || totalAllocated;
 
     const plan = await prisma.procurementPlan.create({
       data: {
@@ -47,9 +63,14 @@ export async function POST(req: Request) {
         fiscalYear: Number(fiscalYear) || 2569,
         name,
         categoryCode: categoryCode || 'ALL',
+        departmentId: departmentId || null,
+        departmentName: departmentName || null,
+        allocationId: allocationId || null,
+        budgetCode: budgetCode || null,
+        targetBudget: planTargetBudget,
         allocatedBudget: totalAllocated,
         committedBudget: 0,
-        remainingBudget: totalAllocated,
+        remainingBudget: planTargetBudget,
         status: 'ACTIVE',
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
